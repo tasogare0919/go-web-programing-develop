@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/tasogare0919/workspaces2022/go-sandbox/go-web-programing/ch01/trace"
+	"github.com/tasogare0919/go-web-programing-develop/ch01/trace"
 )
 
 type room struct {
