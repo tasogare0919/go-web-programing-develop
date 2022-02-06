@@ -13,34 +13,37 @@ type room struct {
 	join chan *client
 	leave chan *client
 	clients map[*client]bool
-	trace trace.Trace
+	tracer trace.Tracer
 }
 
 func newRoom() *room {
-	return $room{
+	return &room{
 		forward: make(chan []byte),
-		join: make(chan *client),
-		leave: make(chan *client),
+		join:    make(chan *client),
+		leave:   make(chan *client),
 		clients: make(map[*client]bool),
-		tracer: trace.Off(),
+		tracer:  trace.Off(),
 	}
 }
 
-func(r *room) run() {
+func (r *room) run() {
 	for {
 		select {
 		case client := <-r.join:
+			// joining
 			r.clients[client] = true
 			r.tracer.Trace("New client joined")
 		case client := <-r.leave:
+			// leaving
 			delete(r.clients, client)
 			close(client.send)
 			r.tracer.Trace("Client left")
 		case msg := <-r.forward:
 			r.tracer.Trace("Message received: ", string(msg))
+			// forward message to all clients
 			for client := range r.clients {
 				client.send <- msg
-				r.tracer.Trace("-- sent to client")
+				r.tracer.Trace(" -- sent to client")
 			}
 		}
 	}
@@ -53,8 +56,8 @@ const (
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize, WriteBufferSize: socketBufferSize}
 
-func (r *room) SaveHTTP(w http.ResponseWriter, req *http.Request) {
-	socket, err := upgrader.Upgrader(w, req, nil)
+func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	socket, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		log.Fatal("ServerHttp:", err)
 		return

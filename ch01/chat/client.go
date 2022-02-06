@@ -11,7 +11,7 @@ type client struct {
 	room *room
 }
 
-func (c *clinet) read() {
+func (c *client) read() {
 	defer c.socket.Close()
 	for {
 			_, msg, err := c.socket.ReadMessage()
@@ -22,7 +22,7 @@ func (c *clinet) read() {
 	}
 }
 
-func (c *client) writ() {
+func (c *client) write() {
 	defer c.socket.Close()
 	for msg := range c.send {
 		err := c.socket.WriteMessage(websocket.TextMessage, msg)
