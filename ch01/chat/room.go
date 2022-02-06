@@ -9,10 +9,15 @@ import (
 )
 
 type room struct {
+	// 他のクライアントに転送するためのメッセージを保持するチャンネル
 	forward chan []byte
+	// チャットルームに参加しようとしているクライアントのためのチャンネル
 	join chan *client
+	// チャットルームから退室しようとしているクライアントのためのチャンネル
 	leave chan *client
+	// 在室しているすべてのクライアントが保持している
 	clients map[*client]bool
+	// tracerはチャットルーム上で行われた操作のログを受け取る
 	tracer trace.Tracer
 }
 
@@ -32,18 +37,18 @@ func (r *room) run() {
 		case client := <-r.join:
 			// joining
 			r.clients[client] = true
-			r.tracer.Trace("New client joined")
+			r.tracer.Trace("新しいクライアントが参加しました")
 		case client := <-r.leave:
 			// leaving
 			delete(r.clients, client)
 			close(client.send)
-			r.tracer.Trace("Client left")
+			r.tracer.Trace("クライアントが退室しました")
 		case msg := <-r.forward:
-			r.tracer.Trace("Message received: ", string(msg))
+			r.tracer.Trace("メッセージを受信しました: ", string(msg))
 			// forward message to all clients
 			for client := range r.clients {
 				client.send <- msg
-				r.tracer.Trace(" -- sent to client")
+				r.tracer.Trace(" -- クライアントに送信しました")
 			}
 		}
 	}
